@@ -435,6 +435,7 @@ function addTextVertices(bucket: SymbolBucket,
     textAlongLine: boolean,
     feature: SymbolFeature,
     textOffset: [number, number],
+    elevationOffset,
     lineArray: {
         lineStartIndex: number;
         lineLength: number;
@@ -473,6 +474,7 @@ function addTextVertices(bucket: SymbolBucket,
         glyphQuads,
         textSizeData,
         textOffset,
+        elevationOffset,
         textAlongLine,
         feature,
         writingMode,
@@ -554,6 +556,7 @@ function addSymbol(bucket: SymbolBucket,
             verticalIconCollisionFeature = new CollisionFeature(collisionBoxArray, anchor, featureIndex, sourceLayerIndex, bucketIndex, verticallyShapedIcon, iconBoxScale, iconPadding, textAlongLine, verticalTextRotation);
         }
     }
+    const elevationOffset = layer.layout.get('elevation-offset').evaluate(feature, {}) ?? 0;
 
     //Place icon first, so text can have a reference to its index in the placed symbol array.
     //Text symbols can lazily shift at render-time because of variable anchor placement.
@@ -593,6 +596,7 @@ function addSymbol(bucket: SymbolBucket,
             iconQuads,
             iconSizeData,
             iconOffset,
+            elevationOffset,
             iconAlongLine,
             feature,
             WritingMode.none,
@@ -612,6 +616,7 @@ function addSymbol(bucket: SymbolBucket,
                 verticalIconQuads,
                 iconSizeData,
                 iconOffset,
+                elevationOffset,
                 iconAlongLine,
                 feature,
                 WritingMode.vertical,
@@ -639,7 +644,7 @@ function addSymbol(bucket: SymbolBucket,
 
         const singleLine = shaping.positionedLines.length === 1;
         numHorizontalGlyphVertices += addTextVertices(
-            bucket, anchor, shaping, imageMap, layer, textAlongLine, feature, textOffset, lineArray,
+            bucket, anchor, shaping, imageMap, layer, textAlongLine, feature, textOffset, elevationOffset, lineArray,
             shapedTextOrientations.vertical ? WritingMode.horizontal : WritingMode.horizontalOnly,
             singleLine ? justifications : [justification],
             placedTextSymbolIndices, placedIconSymbolIndex, sizes, canonical);
@@ -652,7 +657,7 @@ function addSymbol(bucket: SymbolBucket,
     if (shapedTextOrientations.vertical) {
         numVerticalGlyphVertices += addTextVertices(
             bucket, anchor, shapedTextOrientations.vertical, imageMap, layer, textAlongLine, feature,
-            textOffset, lineArray, WritingMode.vertical, ['vertical'], placedTextSymbolIndices, verticalPlacedIconSymbolIndex, sizes, canonical);
+            textOffset, elevationOffset, lineArray, WritingMode.vertical, ['vertical'], placedTextSymbolIndices, verticalPlacedIconSymbolIndex, sizes, canonical);
     }
 
     const textBoxStartIndex = textCollisionFeature ? textCollisionFeature.boxStartIndex : bucket.collisionBoxArray.length;

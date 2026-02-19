@@ -1,6 +1,7 @@
 in vec4 a_pos_offset;
 in vec4 a_data;
 in vec4 a_pixeloffset;
+in float a_elevation;
 in vec3 a_projected_pos;
 in float a_fade_opacity;
 
@@ -55,7 +56,7 @@ void main() {
     float a_size_min = floor(a_size[0] * 0.5);
     vec2 a_pxoffset = a_pixeloffset.xy;
 
-    float ele = get_elevation(a_pos);
+    float ele = get_elevation(a_pos) + a_elevation;
     highp float segment_angle = -a_projected_pos[2];
     float size;
 

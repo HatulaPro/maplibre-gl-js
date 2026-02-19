@@ -156,6 +156,7 @@ for (const name in layoutAttributes) {
 
 createStructArrayType('symbol_layout', symbolLayoutAttributes);
 createStructArrayType('symbol_dynamic_layout', dynamicLayoutAttributes);
+createStructArrayType('symbol_elevation_layout', dynamicLayoutAttributes);
 createStructArrayType('symbol_opacity', placementOpacityAttributes);
 createStructArrayType('collision_box', collisionBox, true);
 createStructArrayType('collision_box_layout', collisionBoxLayout);

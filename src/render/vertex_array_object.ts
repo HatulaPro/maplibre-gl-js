@@ -18,6 +18,7 @@ export class VertexArrayObject {
     boundDynamicVertexBuffer: VertexBuffer;
     boundDynamicVertexBuffer2: VertexBuffer;
     boundDynamicVertexBuffer3: VertexBuffer;
+    boundDynamicVertexBuffer4: VertexBuffer;
     vao: any;
 
     constructor() {
@@ -38,7 +39,8 @@ export class VertexArrayObject {
         vertexOffset?: number | null,
         dynamicVertexBuffer?: VertexBuffer | null,
         dynamicVertexBuffer2?: VertexBuffer | null,
-        dynamicVertexBuffer3?: VertexBuffer | null) {
+        dynamicVertexBuffer3?: VertexBuffer | null,
+        dynamicVertexBuffer4?: VertexBuffer | null) {
 
         this.context = context;
 
@@ -58,11 +60,12 @@ export class VertexArrayObject {
             this.boundVertexOffset !== vertexOffset ||
             this.boundDynamicVertexBuffer !== dynamicVertexBuffer ||
             this.boundDynamicVertexBuffer2 !== dynamicVertexBuffer2 ||
-            this.boundDynamicVertexBuffer3 !== dynamicVertexBuffer3
+            this.boundDynamicVertexBuffer3 !== dynamicVertexBuffer3 ||
+            this.boundDynamicVertexBuffer4 !== dynamicVertexBuffer4
         );
 
         if (isFreshBindRequired) {
-            this.freshBind(program, layoutVertexBuffer, paintVertexBuffers, indexBuffer, vertexOffset, dynamicVertexBuffer, dynamicVertexBuffer2, dynamicVertexBuffer3);
+            this.freshBind(program, layoutVertexBuffer, paintVertexBuffers, indexBuffer, vertexOffset, dynamicVertexBuffer, dynamicVertexBuffer2, dynamicVertexBuffer3 ,dynamicVertexBuffer4);
         } else {
             context.bindVertexArray.set(this.vao);
 
@@ -82,6 +85,10 @@ export class VertexArrayObject {
             if (dynamicVertexBuffer3) {
                 dynamicVertexBuffer3.bind();
             }
+            
+            if (dynamicVertexBuffer4) {
+                dynamicVertexBuffer4.bind();
+            }
         }
     }
 
@@ -92,7 +99,8 @@ export class VertexArrayObject {
         vertexOffset?: number | null,
         dynamicVertexBuffer?: VertexBuffer | null,
         dynamicVertexBuffer2?: VertexBuffer | null,
-        dynamicVertexBuffer3?: VertexBuffer | null) {
+        dynamicVertexBuffer3?: VertexBuffer | null,
+        dynamicVertexBuffer4?: VertexBuffer | null) {
 
         const numNextAttributes = program.numAttributes;
 
@@ -127,6 +135,9 @@ export class VertexArrayObject {
         if (dynamicVertexBuffer3) {
             dynamicVertexBuffer3.enableAttributes(gl, program);
         }
+        if (dynamicVertexBuffer4) {
+            dynamicVertexBuffer4.enableAttributes(gl, program);
+        }
 
         layoutVertexBuffer.bind();
         layoutVertexBuffer.setVertexAttribPointers(gl, program, vertexOffset);
@@ -149,6 +160,10 @@ export class VertexArrayObject {
         if (dynamicVertexBuffer3) {
             dynamicVertexBuffer3.bind();
             dynamicVertexBuffer3.setVertexAttribPointers(gl, program, vertexOffset);
+        }
+        if (dynamicVertexBuffer4) {
+            dynamicVertexBuffer4.bind();
+            dynamicVertexBuffer4.setVertexAttribPointers(gl, program, vertexOffset);
         }
 
         context.currentNumAttributes = numNextAttributes;

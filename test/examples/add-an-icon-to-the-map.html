@@ -1,54 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <title>Add an icon to the map</title>
-    <meta property="og:description" content="Add an icon to the map from an external URL and use it in a symbol layer." />
-    <meta charset='utf-8'>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel='stylesheet' href='../../dist/maplibre-gl.css' />
-    <script src='../../dist/maplibre-gl-dev.js'></script>
-    <style>
-        body { margin: 0; padding: 0; }
-        html, body, #map { height: 100%; }
-    </style>
-</head>
-<body>
-<div id="map"></div>
-
-<script>
-    const map = new maplibregl.Map({
-        container: 'map',
-        style: 'https://demotiles.maplibre.org/style.json'
-    });
-
-    map.on('load', async () => {
-        image = await map.loadImage('https://upload.wikimedia.org/wikipedia/commons/7/7c/201408_cat.png');
-        map.addImage('cat', image.data);
-        map.addSource('point', {
-            'type': 'geojson',
-            'data': {
-                'type': 'FeatureCollection',
-                'features': [
-                    {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': [0, 0]
-                        }
-                    }
-                ]
+    <head>
+        <title>Add an icon to the map</title>
+        <meta
+            property="og:description"
+            content="Add an icon to the map from an external URL and use it in a symbol layer."
+        />
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="../../dist/maplibre-gl.css" />
+        <script src="../../dist/maplibre-gl-dev.js"></script>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
             }
-        });
-        map.addLayer({
-            'id': 'points',
-            'type': 'symbol',
-            'source': 'point',
-            'layout': {
-                'icon-image': 'cat',
-                'icon-size': 0.25
+            html,
+            body,
+            #map {
+                height: 100%;
             }
-        });
-    });
-</script>
-</body>
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+
+        <script>
+            const map = new maplibregl.Map({
+                container: "map",
+                style: "https://demotiles.maplibre.org/style.json",
+            });
+
+            map.on("load", async () => {
+                map.setMaxPitch(80);
+                map.setPitch(80);
+                map.setBearing(14.588904334574636);
+                map.setCenter({
+                    lng: 35.32971544758698,
+                    lat: 33.05973739696687,
+                });
+                map.setZoom(18);
+
+                image = await map.loadImage(
+                    "https://upload.wikimedia.org/wikipedia/commons/7/7c/201408_cat.png",
+                );
+                map.addImage("cat", image.data);
+                // map.addSource("point", {
+                //     type: "geojson",
+                //     data: {
+                //         type: "FeatureCollection",
+                //         features: [
+                //             {
+                //                 type: "Feature",
+                //                 properties: {
+                //                     height: 50,
+                //                     name: "cat",
+                //                 },
+                //                 geometry: {
+                //                     type: "Point",
+                //                     coordinates: [
+                //                         35.32960358509371, 33.059634622797674,
+                //                     ],
+                //                 },
+                //             },
+                //         ],
+                //     },
+                // });
+                // map.addLayer({
+                //     id: "points",
+                //     type: "symbol",
+                //     source: "point",
+                //     layout: {
+                //         "icon-image": "cat",
+                //         "icon-size": 0.25,
+                //         "text-field": ["get", "name"],
+                //         "text-size": 12,
+                //         "elevation-offset": ["get", "height"],
+                //     },
+                // });
+                // Adding a polygon around the cat, with fill extrusion height of 10 meters
+                map.addSource("polygon", {
+                    type: "geojson",
+                    data: {
+                        type: "FeatureCollection",
+                        features: [
+                            {
+                                type: "Feature",
+                                properties: {
+                                    height: 10,
+                                },
+                                geometry: {
+                                    type: "Polygon",
+                                    coordinates: [
+                                        [
+                                            [
+                                                35.32860358509371,
+                                                33.059634622797674,
+                                            ],
+                                            [
+                                                35.33060358509371,
+                                                33.059634622797674,
+                                            ],
+                                            [
+                                                35.33060358509371,
+                                                33.060634622797674,
+                                            ],
+                                            [
+                                                35.32860358509371,
+                                                33.060634622797674,
+                                            ],
+                                            [
+                                                35.32860358509371,
+                                                33.059634622797674,
+                                            ],
+                                        ],
+                                    ],
+                                },
+                            },
+                        ],
+                    },
+                });
+                map.addLayer({
+                    id: "polygon",
+                    type: "fill-extrusion",
+                    source: "polygon",
+                    paint: {
+                        "fill-extrusion-color": "#00ff00",
+                        "fill-extrusion-height": ["get", "height"],
+                    },
+                });
+                map.addLayer({
+                    id: "points-on-polygon",
+                    type: "symbol",
+                    source: "polygon",
+                    layout: {
+                        "icon-image": "cat",
+                        "icon-size": 0.25,
+                        "symbol-placement": "line-center",
+                        "elevation-offset": ["+", ["get", "height"], 10],
+                    },
+                });
+            });
+        </script>
+    </body>
 </html>
