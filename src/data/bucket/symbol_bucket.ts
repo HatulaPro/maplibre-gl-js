@@ -13,6 +13,7 @@ import {SymbolLayoutArray,
     CollisionVertexArray,
     PlacedSymbolArray,
     SymbolInstanceArray,
+    SymbolElevationLayoutArray,
     GlyphOffsetArray,
     SymbolLineVertexArray,
     TextAnchorOffsetArray
@@ -45,7 +46,7 @@ import type {
     IndexedFeature,
     PopulateParameters
 } from '../bucket';
-import {type CollisionBoxArray, type CollisionBox, type SymbolInstance, SymbolElevationLayoutArray} from '../array_types.g';
+import type {CollisionBoxArray, CollisionBox, SymbolInstance} from '../array_types.g';
 import type {StructArray, StructArrayMember, ViewType} from '../../util/struct_array';
 import type {SymbolStyleLayer} from '../../style/style_layer/symbol_style_layer';
 import type {Context} from '../../gl/context';
@@ -562,7 +563,6 @@ export class SymbolBucket implements Bucket {
             // Merge adjacent lines with the same text to improve labelling.
             // It's better to place labels on one long line than on many short segments.
             this.features = mergeLines(this.features);
-            console.log(this.features);
         }
 
         if (this.sortFeaturesByKey) {

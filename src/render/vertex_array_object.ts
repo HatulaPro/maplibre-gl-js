@@ -65,7 +65,7 @@ export class VertexArrayObject {
         );
 
         if (isFreshBindRequired) {
-            this.freshBind(program, layoutVertexBuffer, paintVertexBuffers, indexBuffer, vertexOffset, dynamicVertexBuffer, dynamicVertexBuffer2, dynamicVertexBuffer3 ,dynamicVertexBuffer4);
+            this.freshBind(program, layoutVertexBuffer, paintVertexBuffers, indexBuffer, vertexOffset, dynamicVertexBuffer, dynamicVertexBuffer2, dynamicVertexBuffer3, dynamicVertexBuffer4);
         } else {
             context.bindVertexArray.set(this.vao);
 
