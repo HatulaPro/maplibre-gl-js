@@ -77,7 +77,7 @@
                             {
                                 type: "Feature",
                                 properties: {
-                                    height: 50,
+                                    height: 1000,
                                 },
                                 geometry: {
                                     type: "Point",
@@ -94,11 +94,7 @@
                     layout: {
                         "icon-image": "cat",
                         "icon-size": 0.25,
-                        "elevation-offset": [
-                            "+",
-                            ["elevation"],
-                            ["get", "height"],
-                        ],
+                        "symbol-elevation": ["get", "height"],
                     },
                 });
             });
