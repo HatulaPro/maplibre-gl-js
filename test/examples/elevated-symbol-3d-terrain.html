@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
         <title>Elevated Symbol on 3D Terrain</title>
@@ -94,7 +94,11 @@
                     layout: {
                         "icon-image": "cat",
                         "icon-size": 0.25,
-                        "elevation-offset": ["get", "height"],
+                        "elevation-offset": [
+                            "+",
+                            ["elevation"],
+                            ["get", "height"],
+                        ],
                     },
                 });
             });

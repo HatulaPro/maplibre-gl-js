@@ -501,5 +501,5 @@ function drawSymbolElements(
         uniformValues, terrainData, projectionData, layer.id, buffers.layoutVertexBuffer,
         buffers.indexBuffer, segments, layer.paint,
         painter.transform.zoom, buffers.programConfigurations.get(layer.id),
-        buffers.dynamicLayoutVertexBuffer, buffers.opacityVertexBuffer, buffers.elevationOffsetVertexBuffer);
+        buffers.dynamicLayoutVertexBuffer, buffers.opacityVertexBuffer, buffers.elevationVertexBuffer);
 }

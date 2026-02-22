@@ -3,7 +3,7 @@ import {
     collisionVertexAttributes,
     collisionBoxLayout,
     dynamicLayoutAttributes,
-    elevationOffsetAttributes,
+    elevationAttributes,
 } from './symbol_attributes';
 
 import {SymbolLayoutArray,
@@ -13,7 +13,7 @@ import {SymbolLayoutArray,
     CollisionVertexArray,
     PlacedSymbolArray,
     SymbolInstanceArray,
-    SymbolElevationOffsetArray,
+    SymbolElevationArray,
     GlyphOffsetArray,
     SymbolLineVertexArray,
     TextAnchorOffsetArray
@@ -151,11 +151,11 @@ function addDynamicAttributes(dynamicLayoutVertexArray: StructArray, p: Point, a
     dynamicLayoutVertexArray.emplaceBack(p.x, p.y, angle);
 }
 
-function addElevationAttributes(elevationOffsetVertexArray: StructArray, elevationOffset: number) {
-    elevationOffsetVertexArray.emplaceBack(elevationOffset);
-    elevationOffsetVertexArray.emplaceBack(elevationOffset);
-    elevationOffsetVertexArray.emplaceBack(elevationOffset);
-    elevationOffsetVertexArray.emplaceBack(elevationOffset);
+function addElevationAttributes(elevationVertexArray: StructArray, elevation: number) {
+    elevationVertexArray.emplaceBack(elevation);
+    elevationVertexArray.emplaceBack(elevation);
+    elevationVertexArray.emplaceBack(elevation);
+    elevationVertexArray.emplaceBack(elevation);
 }
 
 function containsRTLText(formattedText: Formatted): boolean {
@@ -180,8 +180,8 @@ export class SymbolBuffers {
     dynamicLayoutVertexArray: SymbolDynamicLayoutArray;
     dynamicLayoutVertexBuffer: VertexBuffer;
 
-    elevationOffsetVertexArray: SymbolElevationOffsetArray;
-    elevationOffsetVertexBuffer: VertexBuffer;
+    elevationVertexArray: SymbolElevationArray;
+    elevationVertexBuffer: VertexBuffer;
 
     opacityVertexArray: SymbolOpacityArray;
     opacityVertexBuffer: VertexBuffer;
@@ -198,7 +198,7 @@ export class SymbolBuffers {
         this.programConfigurations = programConfigurations;
         this.segments = new SegmentVector();
         this.dynamicLayoutVertexArray = new SymbolDynamicLayoutArray();
-        this.elevationOffsetVertexArray = new SymbolElevationOffsetArray();
+        this.elevationVertexArray = new SymbolElevationArray();
         this.opacityVertexArray = new SymbolOpacityArray();
         this.hasVisibleVertices = false;
         this.placedSymbolArray = new PlacedSymbolArray();
@@ -208,7 +208,7 @@ export class SymbolBuffers {
         return this.layoutVertexArray.length === 0 &&
             this.indexArray.length === 0 &&
             this.dynamicLayoutVertexArray.length === 0 &&
-            this.elevationOffsetVertexArray.length === 0 &&
+            this.elevationVertexArray.length === 0 &&
             this.opacityVertexArray.length === 0;
     }
 
@@ -221,7 +221,7 @@ export class SymbolBuffers {
             this.layoutVertexBuffer = context.createVertexBuffer(this.layoutVertexArray, symbolLayoutAttributes.members);
             this.indexBuffer = context.createIndexBuffer(this.indexArray, dynamicIndexBuffer);
             this.dynamicLayoutVertexBuffer = context.createVertexBuffer(this.dynamicLayoutVertexArray, dynamicLayoutAttributes.members, true);
-            this.elevationOffsetVertexBuffer = context.createVertexBuffer(this.elevationOffsetVertexArray, elevationOffsetAttributes.members, true);
+            this.elevationVertexBuffer = context.createVertexBuffer(this.elevationVertexArray, elevationAttributes.members, true);
             this.opacityVertexBuffer = context.createVertexBuffer(this.opacityVertexArray, shaderOpacityAttributes, true);
             // This is a performance hack so that we can write to opacityVertexArray with uint32s
             // even though the shaders read uint8s
@@ -240,7 +240,7 @@ export class SymbolBuffers {
         this.segments.destroy();
         this.dynamicLayoutVertexBuffer.destroy();
         this.opacityVertexBuffer.destroy();
-        this.elevationOffsetVertexBuffer.destroy();
+        this.elevationVertexBuffer.destroy();
     }
 }
 
@@ -650,7 +650,7 @@ export class SymbolBucket implements Bucket {
         quads: Array<SymbolQuad>,
         sizeVertex: any,
         lineOffset: [number, number],
-        elevationOffset: number,
+        elevation: number,
         alongLine: boolean,
         feature: SymbolFeature,
         writingMode: WritingMode,
@@ -681,7 +681,7 @@ export class SymbolBucket implements Bucket {
             addVertex(layoutVertexArray, labelAnchor.x, labelAnchor.y, br.x, y + br.y, tex.x + tex.w, tex.y + tex.h, sizeVertex, isSDF, pixelOffsetBR.x, pixelOffsetBR.y, minFontScaleX, minFontScaleY);
 
             addDynamicAttributes(arrays.dynamicLayoutVertexArray, labelAnchor, angle);
-            addElevationAttributes(arrays.elevationOffsetVertexArray, elevationOffset);
+            addElevationAttributes(arrays.elevationVertexArray, elevation);
 
             indexArray.emplaceBack(index, index + 2, index + 1);
             indexArray.emplaceBack(index + 1, index + 2, index + 3);
