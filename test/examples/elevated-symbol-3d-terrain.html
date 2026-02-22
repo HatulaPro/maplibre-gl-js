@@ -67,8 +67,62 @@
                 const image = await map.loadImage(
                     "https://upload.wikimedia.org/wikipedia/commons/7/7c/201408_cat.png",
                 );
-                map.addImage("cat", image.data);
 
+                map.addImage("cat", image.data);
+                const point = [11.39085, 47.27579];
+                const terrainHeight = map.queryTerrainElevation(point);
+                const elevationOffset = 50;
+
+                map.addSource("house", {
+                    type: "geojson",
+                    data: {
+                        type: "FeatureCollection",
+                        features: [
+                            {
+                                type: "Feature",
+                                properties: {
+                                    height: elevationOffset,
+                                },
+                                geometry: {
+                                    type: "Polygon",
+                                    coordinates: [
+                                        [
+                                            [
+                                                point[0] - 0.0001,
+                                                point[1] - 0.0001,
+                                            ],
+                                            [
+                                                point[0] + 0.0001,
+                                                point[1] - 0.0001,
+                                            ],
+                                            [
+                                                point[0] + 0.0001,
+                                                point[1] + 0.0001,
+                                            ],
+                                            [
+                                                point[0] - 0.0001,
+                                                point[1] + 0.0001,
+                                            ],
+                                            [
+                                                point[0] - 0.0001,
+                                                point[1] - 0.0001,
+                                            ],
+                                        ],
+                                    ],
+                                },
+                            },
+                        ],
+                    },
+                });
+                map.addLayer({
+                    id: "elevated-house",
+                    type: "fill-extrusion",
+                    source: "house",
+                    paint: {
+                        "fill-extrusion-color": "#ff0000",
+                        "fill-extrusion-height": ["get", "height"],
+                    },
+                });
                 map.addSource("point", {
                     type: "geojson",
                     data: {
@@ -77,11 +131,21 @@
                             {
                                 type: "Feature",
                                 properties: {
-                                    height: 1000,
+                                    height: terrainHeight + elevationOffset,
                                 },
                                 geometry: {
                                     type: "Point",
-                                    coordinates: [11.39085, 47.27574],
+                                    coordinates: point,
+                                },
+                            },
+                            {
+                                type: "Feature",
+                                properties: {
+                                    height: terrainHeight + elevationOffset,
+                                },
+                                geometry: {
+                                    type: "Point",
+                                    coordinates: [point[0] + 0.001, point[1]],
                                 },
                             },
                         ],
@@ -95,6 +159,7 @@
                         "icon-image": "cat",
                         "icon-size": 0.25,
                         "symbol-elevation": ["get", "height"],
+                        "icon-allow-overlap": true,
                     },
                 });
             });
