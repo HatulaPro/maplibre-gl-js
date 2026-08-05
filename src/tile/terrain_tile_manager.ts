@@ -9,7 +9,7 @@ import type {Source} from '../source/source.ts';
 import {type Terrain} from '../render/terrain.ts';
 import {now} from '../util/time_control.ts';
 import {coveringTiles} from '../geo/projection/covering_tiles.ts';
-import {createMat4f64} from '../util/util.ts';
+import {createMat4f64, type Mat4f64} from '../util/util.ts';
 import {type CanonicalTileRange} from '../source/image_source.ts';
 
 /**
@@ -188,15 +188,20 @@ export class TerrainTileManager extends Evented {
         const coords: Record<string, OverscaledTileID> = {};
         for (const key of this._renderableTilesKeys) {
             const terrainTileID = this._tiles[key].tileID;
-            const coord = tileID.clone();
-            const mat = createMat4f64();
+            // Only overlapping tiles produce a coord, and at typical tile sizes that is a few
+            // percent of the pairs. Allocating the clone and the matrix before the overlap test
+            // throws both away for every other pair, so they are allocated per branch instead.
+            // `_getTerrainCoordsForTileRanges` already filters before allocating.
+            let mat: Mat4f64;
             if (terrainTileID.canonical.equals(tileID.canonical)) {
+                mat = createMat4f64();
                 mat4.ortho(mat, 0, EXTENT, EXTENT, 0, 0, 1);
             } else if (terrainTileID.canonical.isChildOf(tileID.canonical)) {
                 const dz = terrainTileID.canonical.z - tileID.canonical.z;
                 const dx = terrainTileID.canonical.x - (terrainTileID.canonical.x >> dz << dz);
                 const dy = terrainTileID.canonical.y - (terrainTileID.canonical.y >> dz << dz);
                 const size = EXTENT >> dz;
+                mat = createMat4f64();
                 mat4.ortho(mat, 0, size, size, 0, 0, 1); // Note: we are using `size` instead of `EXTENT` here
                 mat4.translate(mat, mat, [-dx * size, -dy * size, 0]);
             } else if (tileID.canonical.isChildOf(terrainTileID.canonical)) {
@@ -204,12 +209,14 @@ export class TerrainTileManager extends Evented {
                 const dx = tileID.canonical.x - (tileID.canonical.x >> dz << dz);
                 const dy = tileID.canonical.y - (tileID.canonical.y >> dz << dz);
                 const size = EXTENT >> dz;
+                mat = createMat4f64();
                 mat4.ortho(mat, 0, EXTENT, EXTENT, 0, 0, 1);
                 mat4.translate(mat, mat, [dx * size, dy * size, 0]);
                 mat4.scale(mat, mat, [1 / (2 ** dz), 1 / (2 ** dz), 0]);
             } else {
                 continue;
             }
+            const coord = tileID.clone();
             coord.terrainRttPosMatrix32f = new Float32Array(mat);
             coords[key] = coord;
         }
