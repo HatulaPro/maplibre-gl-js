@@ -12,9 +12,7 @@ class LayerPlacement {
     _sortAcrossTiles: boolean;
     _currentTileIndex: number;
     _currentPartIndex: number;
-    _seenCrossTileIDs: {
-        [k in string | number]: boolean;
-    };
+    _seenCrossTileIDs: Set<number>;
     _bucketParts: BucketPart[];
 
     constructor(styleLayer: SymbolStyleLayer) {
@@ -23,7 +21,7 @@ class LayerPlacement {
 
         this._currentTileIndex = 0;
         this._currentPartIndex = 0;
-        this._seenCrossTileIDs = {};
+        this._seenCrossTileIDs = new Set();
         this._bucketParts = [];
     }
 

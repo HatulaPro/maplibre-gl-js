@@ -97,9 +97,7 @@ class TileLayerIndex {
         };
     }
 
-    findMatches(symbolInstances: SymbolInstanceArray, newTileID: OverscaledTileID, zoomCrossTileIDs: {
-        [crossTileID: number]: boolean;
-    }): void {
+    findMatches(symbolInstances: SymbolInstanceArray, newTileID: OverscaledTileID, zoomCrossTileIDs: Set<number>): void {
         const tolerance = this.tileID.canonical.z < newTileID.canonical.z ? 1 : Math.pow(2, this.tileID.canonical.z - newTileID.canonical.z);
 
         for (let i = 0; i < symbolInstances.length; i++) {
@@ -139,9 +137,7 @@ class TileLayerIndex {
      * Once a symbol is marked duplicate against a parent symbol, no other symbol
      * at the same zoom level may duplicate against the same parent (see issue #5993).
      */
-    private findMatchesForIndexedEntry(entry: SymbolsByKeyEntry, symbolInstance: SymbolInstance, scaledSymbolCoord: {x: number; y: number}, tolerance: number, zoomCrossTileIDs: {
-        [crossTileID: number]: boolean;
-    }): void {
+    private findMatchesForIndexedEntry(entry: SymbolsByKeyEntry, symbolInstance: SymbolInstance, scaledSymbolCoord: {x: number; y: number}, tolerance: number, zoomCrossTileIDs: Set<number>): void {
         const indexes = entry.index.range(
             scaledSymbolCoord.x - tolerance,
             scaledSymbolCoord.y - tolerance,
@@ -150,13 +146,13 @@ class TileLayerIndex {
 
         let bestIndex = Infinity;
         for (const candidate of indexes) {
-            if (candidate < bestIndex && !zoomCrossTileIDs[entry.crossTileIDs[candidate]]) {
+            if (candidate < bestIndex && !zoomCrossTileIDs.has(entry.crossTileIDs[candidate])) {
                 bestIndex = candidate;
             }
         }
         if (bestIndex !== Infinity) {
             const crossTileID = entry.crossTileIDs[bestIndex];
-            zoomCrossTileIDs[crossTileID] = true;
+            zoomCrossTileIDs.add(crossTileID);
             symbolInstance.crossTileID = crossTileID;
         }
     }
@@ -173,17 +169,15 @@ class TileLayerIndex {
      * Once a symbol is marked duplicate against a parent symbol, no other symbol
      * at the same zoom level may duplicate against the same parent (see issue #5993).
      */
-    private findMatchesForNonIndexedEntry(entry: SymbolsByKeyEntry, symbolInstance: SymbolInstance, scaledSymbolCoord: {x: number; y: number}, tolerance: number, zoomCrossTileIDs: {
-        [crossTileID: number]: boolean;
-    }): void {
+    private findMatchesForNonIndexedEntry(entry: SymbolsByKeyEntry, symbolInstance: SymbolInstance, scaledSymbolCoord: {x: number; y: number}, tolerance: number, zoomCrossTileIDs: Set<number>): void {
         for (let i = 0; i < entry.positions.length; i++) {
             const thisTileSymbol = entry.positions[i];
             const crossTileID = entry.crossTileIDs[i];
 
             if (Math.abs(thisTileSymbol.x - scaledSymbolCoord.x) <= tolerance &&
                 Math.abs(thisTileSymbol.y - scaledSymbolCoord.y) <= tolerance &&
-                !zoomCrossTileIDs[crossTileID]) {
-                zoomCrossTileIDs[crossTileID] = true;
+                !zoomCrossTileIDs.has(crossTileID)) {
+                zoomCrossTileIDs.add(crossTileID);
                 symbolInstance.crossTileID = crossTileID;
                 break;
             }
@@ -212,9 +206,7 @@ class CrossTileSymbolLayerIndex {
         };
     };
     usedCrossTileIDs: {
-        [zoom in string | number]: {
-            [crossTileID: number]: boolean;
-        };
+        [zoom in string | number]: Set<number>;
     };
     lng: number;
 
@@ -268,7 +260,7 @@ class CrossTileSymbolLayerIndex {
             symbolInstance.crossTileID = 0;
         }
 
-        this.usedCrossTileIDs[tileID.overscaledZ] ||= {};
+        this.usedCrossTileIDs[tileID.overscaledZ] ||= new Set();
         const zoomCrossTileIDs = this.usedCrossTileIDs[tileID.overscaledZ];
 
         for (const zoom in this.indexes) {
@@ -294,7 +286,7 @@ class CrossTileSymbolLayerIndex {
             if (!symbolInstance.crossTileID) {
                 // symbol did not match any known symbol, assign a new id
                 symbolInstance.crossTileID = crossTileIDs.generate();
-                zoomCrossTileIDs[symbolInstance.crossTileID] = true;
+                zoomCrossTileIDs.add(symbolInstance.crossTileID);
             }
         }
 
@@ -309,7 +301,7 @@ class CrossTileSymbolLayerIndex {
     removeBucketCrossTileIDs(zoom: string | number, removedBucket: TileLayerIndex): void {
         for (const crossTileIDs of removedBucket.getCrossTileIDsLists()) {
             for (const crossTileID of crossTileIDs) {
-                delete this.usedCrossTileIDs[zoom][crossTileID];
+                this.usedCrossTileIDs[zoom].delete(crossTileID);
             }
         }
     }

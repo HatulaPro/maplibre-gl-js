@@ -112,7 +112,7 @@ describe('SymbolBucket', () => {
             const parts = [];
             placement.getBucketParts(parts, layer, tile, false);
             for (const part of parts) {
-                placement.placeLayerBucketPart(part, {}, false);
+                placement.placeLayerBucketPart(part, new Set(), false);
             }
         };
         const a = placement.collisionIndex.grid.keysLength();

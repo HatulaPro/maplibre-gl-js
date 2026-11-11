@@ -81,7 +81,7 @@ describe('placement', () => {
                     layout: layer.layout,
                     bucket
                 } as any
-            }, {}, false);
+            }, new Set(), false);
         }).not.toThrow();
     });
 

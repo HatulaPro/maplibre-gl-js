@@ -146,7 +146,7 @@ describe('CrossTileSymbolIndex.addLayer', () => {
         expect(mainInstances[1].crossTileID).toBe(2);
 
         const layerIndex = index.layerIndexes[styleLayer.id];
-        expect(Object.keys(layerIndex.usedCrossTileIDs[6])).toEqual(['1', '2']);
+        expect([...layerIndex.usedCrossTileIDs[6]]).toEqual([1, 2]);
 
         // copies parent ids without duplicate ids in this tile
         index.addLayer(styleLayer, [childTile], 0);
@@ -155,8 +155,8 @@ describe('CrossTileSymbolIndex.addLayer', () => {
         expect(childInstances[2].crossTileID).toBe(3); // C' gets new ID
 
         // Updates per-zoom usedCrossTileIDs
-        expect(Object.keys(layerIndex.usedCrossTileIDs[6])).toEqual([]);
-        expect(Object.keys(layerIndex.usedCrossTileIDs[7])).toEqual(['1', '2', '3']);
+        expect([...layerIndex.usedCrossTileIDs[6]]).toEqual([]);
+        expect([...layerIndex.usedCrossTileIDs[7]]).toEqual([1, 2, 3]);
 
     });
 
@@ -183,7 +183,7 @@ describe('CrossTileSymbolIndex.addLayer', () => {
         expect(firstInstances[1].crossTileID).toBe(2);
 
         const layerIndex = index.layerIndexes[styleLayer.id];
-        expect(Object.keys(layerIndex.usedCrossTileIDs[6])).toEqual(['1', '2']);
+        expect([...layerIndex.usedCrossTileIDs[6]]).toEqual([1, 2]);
 
         // uses same ids when tile gets updated
         index.addLayer(styleLayer, [secondTile], 0);
@@ -191,7 +191,7 @@ describe('CrossTileSymbolIndex.addLayer', () => {
         expect(secondInstances[1].crossTileID).toBe(2); // B' copies from B
         expect(secondInstances[2].crossTileID).toBe(3); // C' gets new ID
 
-        expect(Object.keys(layerIndex.usedCrossTileIDs[6])).toEqual(['1', '2', '3']);
+        expect([...layerIndex.usedCrossTileIDs[6]]).toEqual([1, 2, 3]);
 
     });
 

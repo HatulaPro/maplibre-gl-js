@@ -191,12 +191,8 @@ export class Placement {
     transform: IReadonlyTransform;
     terrain: Terrain;
     collisionIndex: CollisionIndex;
-    placements: {
-        [_ in CrossTileID]: JointPlacement;
-    };
-    opacities: {
-        [_ in CrossTileID]: JointOpacityState;
-    };
+    placements: Map<number, JointPlacement>;
+    opacities: Map<number, JointOpacityState>;
     variableOffsets: {
         [_ in CrossTileID]: VariableOffset;
     };
@@ -227,8 +223,8 @@ export class Placement {
         this.transform = transform.clone();
         this.terrain = terrain;
         this.collisionIndex = new CollisionIndex(this.transform);
-        this.placements = {};
-        this.opacities = {};
+        this.placements = new Map();
+        this.opacities = new Map();
         this.variableOffsets = {};
         this.stale = false;
         this.commitTime = 0;
@@ -402,7 +398,7 @@ export class Placement {
             // If this label was placed in the previous placement, record the anchor position
             // to allow us to animate the transition
             if (this.prevPlacement?.variableOffsets[symbolInstance.crossTileID] &&
-                this.prevPlacement?.placements[symbolInstance.crossTileID]?.text) {
+                this.prevPlacement?.placements.get(symbolInstance.crossTileID)?.text) {
                 prevAnchor = this.prevPlacement.variableOffsets[symbolInstance.crossTileID].anchor;
             }
             if (symbolInstance.crossTileID === 0) throw new Error('symbolInstance.crossTileID can\'t be 0');
@@ -425,9 +421,7 @@ export class Placement {
         }
     }
 
-    placeLayerBucketPart(bucketPart: BucketPart, seenCrossTileIDs: {
-        [k in string | number]: boolean;
-    }, showCollisionBoxes: boolean): void {
+    placeLayerBucketPart(bucketPart: BucketPart, seenCrossTileIDs: Set<number>, showCollisionBoxes: boolean): void {
 
         const {
             bucket,
@@ -481,11 +475,11 @@ export class Placement {
         const simpleProjectionMatrix = this.transform.getFastPathSimpleProjectionMatrix(tileID);
 
         const placeSymbol = (symbolInstance: SymbolInstance, collisionArrays: CollisionArrays, symbolIndex: number) => {
-            if (seenCrossTileIDs[symbolInstance.crossTileID]) return;
+            if (seenCrossTileIDs.has(symbolInstance.crossTileID)) return;
             if (holdingForFade) {
                 // Mark all symbols from this tile as "not placed", but don't add to seenCrossTileIDs, because we don't
                 // know yet if we have a duplicate in a parent tile that _should_ be placed.
-                this.placements[symbolInstance.crossTileID] = new JointPlacement(false, false, false);
+                this.placements.set(symbolInstance.crossTileID, new JointPlacement(false, false, false));
                 return;
             }
 
@@ -845,8 +839,8 @@ export class Placement {
             // Do not show text or icons that are occluded by the globe, even if overlap mode is 'always'!
             const textVisible: boolean = (placeText || alwaysShowText) && !(placedGlyphBoxes?.occluded);
             const iconVisible = (placeIcon || alwaysShowIcon) && !(placedIconBoxes?.occluded);
-            this.placements[symbolInstance.crossTileID] = new JointPlacement(textVisible, iconVisible, offscreen || bucket.justReloaded);
-            seenCrossTileIDs[symbolInstance.crossTileID] = true;
+            this.placements.set(symbolInstance.crossTileID, new JointPlacement(textVisible, iconVisible, offscreen || bucket.justReloaded));
+            seenCrossTileIDs.add(symbolInstance.crossTileID);
         };
 
         if (zOrderByViewportY) {
@@ -985,44 +979,42 @@ export class Placement {
         this.prevZoomAdjustment = prevPlacement ? prevPlacement.zoomAdjustment(this.transform.zoom) : 0;
         const increment = prevPlacement ? prevPlacement.symbolFadeChange(now) : 1;
 
-        const prevOpacities = prevPlacement ? prevPlacement.opacities : {};
+        const prevOpacities = prevPlacement ? prevPlacement.opacities : new Map<number, JointOpacityState>();
         const prevOffsets = prevPlacement ? prevPlacement.variableOffsets : {};
         const prevOrientations = prevPlacement ? prevPlacement.placedOrientations : {};
 
         // add the opacities from the current placement, and copy their current values from the previous placement
-        for (const crossTileID in this.placements) {
-            const jointPlacement = this.placements[crossTileID];
-            const prevOpacity = prevOpacities[crossTileID];
+        for (const [crossTileID, jointPlacement] of this.placements) {
+            const prevOpacity = prevOpacities.get(crossTileID);
             if (prevOpacity) {
-                this.opacities[crossTileID] = new JointOpacityState(prevOpacity, increment, jointPlacement.text, jointPlacement.icon);
+                this.opacities.set(crossTileID, new JointOpacityState(prevOpacity, increment, jointPlacement.text, jointPlacement.icon));
                 placementChanged ||= jointPlacement.text !== prevOpacity.text.placed;
                 placementChanged ||= jointPlacement.icon !== prevOpacity.icon.placed;
             } else {
-                this.opacities[crossTileID] = new JointOpacityState(null, increment, jointPlacement.text, jointPlacement.icon, jointPlacement.skipFade);
+                this.opacities.set(crossTileID, new JointOpacityState(null, increment, jointPlacement.text, jointPlacement.icon, jointPlacement.skipFade));
                 placementChanged ||= jointPlacement.text || jointPlacement.icon;
             }
         }
 
         // copy and update values from the previous placement that aren't in the current placement but haven't finished fading
-        for (const crossTileID in prevOpacities) {
-            const prevOpacity = prevOpacities[crossTileID];
-            if (!this.opacities[crossTileID]) {
+        for (const [crossTileID, prevOpacity] of prevOpacities) {
+            if (!this.opacities.has(crossTileID)) {
                 const jointOpacity = new JointOpacityState(prevOpacity, increment, false, false);
                 if (!jointOpacity.isHidden()) {
-                    this.opacities[crossTileID] = jointOpacity;
+                    this.opacities.set(crossTileID, jointOpacity);
                     placementChanged ||= prevOpacity.text.placed;
                     placementChanged ||= prevOpacity.icon.placed;
                 }
             }
         }
         for (const crossTileID in prevOffsets) {
-            if (!this.variableOffsets[crossTileID] && this.opacities[crossTileID] && !this.opacities[crossTileID].isHidden()) {
+            if (!this.variableOffsets[crossTileID] && this.opacities.get(Number(crossTileID))?.isHidden() === false) {
                 this.variableOffsets[crossTileID] = prevOffsets[crossTileID];
             }
         }
 
         for (const crossTileID in prevOrientations) {
-            if (!this.placedOrientations[crossTileID] && this.opacities[crossTileID] && !this.opacities[crossTileID].isHidden()) {
+            if (!this.placedOrientations[crossTileID] && this.opacities.get(Number(crossTileID))?.isHidden() === false) {
                 this.placedOrientations[crossTileID] = prevOrientations[crossTileID];
             }
         }
@@ -1042,7 +1034,7 @@ export class Placement {
 
     /** Writes the opacity buffers of `styleLayer`, skipping buckets a rewrite would leave as they are. */
     updateLayerOpacities(styleLayer: StyleLayer, tiles: Tile[]): void {
-        const seenCrossTileIDs = {};
+        const seenCrossTileIDs = new Set<number>();
         for (const tile of tiles) {
             const symbolBucket = tile.getBucket(styleLayer) as SymbolBucket;
             if (!symbolBucket || !tile.latestFeatureIndex || styleLayer.id !== symbolBucket.layerIds[0]) continue;
@@ -1065,7 +1057,7 @@ export class Placement {
      * Marks the bucket's symbols whose label an earlier bucket already draws, and claims the rest in `seenCrossTileIDs`.
      * `changed` is false when the marks match the last call, which means the buffers are already up to date.
      */
-    _markDuplicates(bucket: SymbolBucket, seenCrossTileIDs: {[k in string | number]: boolean}): {duplicates: boolean[]; changed: boolean} {
+    _markDuplicates(bucket: SymbolBucket, seenCrossTileIDs: Set<number>): {duplicates: boolean[]; changed: boolean} {
         const length = bucket.symbolInstances.length;
         let inputs = this.lastOpacityInputs.get(bucket);
         let changed = false;
@@ -1081,8 +1073,8 @@ export class Placement {
         const stride = bucket.symbolInstances.bytesPerElement / 4;
         for (let s = 0; s < length; s++) {
             const crossTileID = uint32[s * stride + CROSS_TILE_ID_UINT32_OFFSET];
-            const duplicate = Boolean(seenCrossTileIDs[crossTileID]);
-            seenCrossTileIDs[crossTileID] = true;
+            const duplicate = seenCrossTileIDs.has(crossTileID);
+            seenCrossTileIDs.add(crossTileID);
             if (crossTileIDs[s] !== crossTileID || duplicates[s] !== duplicate) {
                 crossTileIDs[s] = crossTileID;
                 duplicates[s] = duplicate;
@@ -1145,13 +1137,13 @@ export class Placement {
 
             const isDuplicate = duplicates[s];
 
-            let opacityState = this.opacities[crossTileID];
+            let opacityState = this.opacities.get(crossTileID);
             if (isDuplicate) {
                 opacityState = duplicateOpacityState;
             } else if (!opacityState) {
                 opacityState = defaultOpacityState;
                 // store the state so that future placements use it as a starting point
-                this.opacities[crossTileID] = opacityState;
+                this.opacities.set(crossTileID, opacityState);
             }
 
             const hasText = numHorizontalGlyphVertices > 0 || numVerticalGlyphVertices > 0;
